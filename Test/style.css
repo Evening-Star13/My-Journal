@@ -39,7 +39,7 @@ body {
 #coverImage {
   width: 100%; /* Changed to 100% for responsiveness */
   height: auto; /* Changed to auto for responsive height */
-  max-width: 300px; /* Set a max-width */
+  max-width: 400px; /* Set a max-width */
   display: flex;
   justify-content: center;
   align-items: center;

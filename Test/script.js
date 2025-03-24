@@ -17,11 +17,18 @@ const closeModal = document.querySelector(".close");
 const cover = document.getElementById("cover");
 const journalApp = document.getElementById("journalApp");
 const openJournalButton = document.getElementById("openJournalButton");
+const closeJournalButton = document.getElementById("closeJournalButton");
 
 // Open Journal Button
 openJournalButton.addEventListener("click", () => {
   cover.style.display = "none";
   journalApp.style.display = "block";
+});
+
+// Close Journal Button
+closeJournalButton.addEventListener("click", () => {
+  journalApp.style.display = "none";
+  cover.style.display = "block";
 });
 
 // Rest of the JavaScript code for the journal app (from previous steps)
