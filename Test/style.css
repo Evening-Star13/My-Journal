@@ -121,7 +121,7 @@ button {
   padding: 10px 20px;
   border: none;
   border-radius: 4px;
-  background-color: #007bff;
+  background-color: rgba(0, 0, 0, 0.51);
   color: #fff;
   font-size: 16px;
   cursor: pointer;
@@ -129,7 +129,7 @@ button {
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: rgb(56, 52, 52);
 }
 
 #entriesList {
@@ -215,30 +215,30 @@ button:hover {
 }
 
 #modalEditButton {
-  background-color: #007bff;
+  background-color: rgba(0, 0, 0, 0.51);
   color: #fff;
 }
 
 #modalEditButton:hover {
-  background-color: #0056b3;
+  background-color: rgb(56, 52, 52);
 }
 
 #modalSaveButton {
-  background-color: #007bff;
+  background-color: rgba(0, 0, 0, 0.51);
   color: #fff;
 }
 
 #modalSaveButton:hover {
-  background-color: #0056b3;
+  background-color: rgb(56, 52, 52);
 }
 
 #modalDeleteButton {
-  background-color: #007bff;
+  background-color: rgba(0, 0, 0, 0.51);
   color: #fff;
 }
 
 #modalDeleteButton:hover {
-  background-color: #0056b3;
+  background-color: rgb(56, 52, 52);
 }
 
 /* Media Queries for Responsiveness */
