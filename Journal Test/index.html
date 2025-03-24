@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Journal App</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Cover Section -->
+    <div id="cover">
+      <h1>My Journal</h1>
+      <div id="coverImage">
+        <img src="./logo9.png" alt="" />
+      </div>
+      <button id="openJournalButton">Open Journal</button>
+    </div>
+
+    <!-- Journal App Section -->
+    <div id="journalApp" style="display: none">
+      <div class="container">
+        <h1>My Journal</h1>
+        <input
+          type="text"
+          id="entryTitle"
+          placeholder="Enter a title for your entry..."
+        />
+        <textarea
+          id="journalEntry"
+          placeholder="Write your journal entry here..."
+        ></textarea>
+        <div class="buttons">
+          <button id="saveNote">Save Note</button>
+          <button id="updateNote" style="display: none">Update Note</button>
+          <button id="tableOfContents">Table of Contents</button>
+          <button id="downloadDatabase">Download Database</button>
+          <button id="closeJournalButton">Close Journal</button>
+        </div>
+        <div id="entriesList" style="display: none"></div>
+      </div>
+
+      <!-- Modal -->
+      <div id="entryModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2 id="modalTitle">Title</h2>
+          <p id="modalContent"></p>
+          <textarea id="modalEditContent" style="display: none"></textarea>
+          <button id="modalEditButton" class="modalButtons">Edit Entry</button>
+          <button
+            id="modalSaveButton"
+            class="modalButtons"
+            style="display: none"
+          >
+            Save Changes
+          </button>
+          <button id="modalDeleteButton" class="modalButtons">
+            Delete Entry
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
