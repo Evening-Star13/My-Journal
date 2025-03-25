@@ -36,29 +36,25 @@
 
 /* Theme Colors - Only affect background/button colors */
 .theme-default {
-  --primary-color: #4a6fa5;
-  --secondary-color: #166088;
+  --primary-color: #0000ff;
+  --secondary-color: #007fff;
   --accent-color: #4fc3f7;
-  --button-hover-color: #166088;
+  --button-hover-color: #0087ff;
   --button-active-color: #0d4b6e;
   --update-button-color: #ffc107;
   --update-button-hover: #e0a800;
-  --save-button-color: #28a745;
-  --save-button-hover: #218838;
   --danger-button-color: #e74c3c;
   --danger-button-hover: #c82333;
 }
 
 .theme-green {
-  --primary-color: #4caf50;
-  --secondary-color: #2e7d32;
+  --primary-color: #5bbb1a;
+  --secondary-color: #7fff00;
   --accent-color: #81c784;
-  --button-hover-color: #2e7d32;
+  --button-hover-color: #12c71b;
   --button-active-color: #1b5e20;
   --update-button-color: #ffb300;
   --update-button-hover: #ffa000;
-  --save-button-color: #388e3c;
-  --save-button-hover: #2e7d32;
   --danger-button-color: #d32f2f;
   --danger-button-hover: #b71c1c;
 }
@@ -67,28 +63,36 @@
   --primary-color: #9c27b0;
   --secondary-color: #7b1fa2;
   --accent-color: #ba68c8;
-  --button-hover-color: #7b1fa2;
+  --button-hover-color: #9b24be;
   --button-active-color: #6a1b9a;
   --update-button-color: #ffab00;
   --update-button-hover: #ff8f00;
-  --save-button-color: #7b1fa2;
-  --save-button-hover: #6a1b9a;
   --danger-button-color: #c2185b;
   --danger-button-hover: #ad1457;
 }
 
 .theme-red {
-  --primary-color: #f44336;
-  --secondary-color: #d32f2f;
+  --primary-color: #c71585;
+  --secondary-color: #a70a6d;
   --accent-color: #e57373;
-  --button-hover-color: #d32f2f;
-  --button-active-color: #b71c1c;
+  --button-hover-color: #aa0c70;
+  --button-active-color: #990a65;
   --update-button-color: #ffa000;
   --update-button-hover: #ff8f00;
-  --save-button-color: #f44336;
-  --save-button-hover: #d32f2f;
   --danger-button-color: #d32f2f;
   --danger-button-hover: #b71c1c;
+}
+
+.theme-magenta {
+  --primary-color: #c200c2;
+  --secondary-color: #cc00cc;
+  --accent-color: #ff66ff;
+  --button-hover-color: #cf16cf;
+  --button-active-color: #990099;
+  --update-button-color: #ffb300;
+  --update-button-hover: #ffa000;
+  --danger-button-color: #ff1493;
+  --danger-button-hover: #c71585;
 }
 
 /* Remove these theme-specific background styles */
@@ -197,11 +201,11 @@ button:active {
 
 /* Specific Button Types */
 #saveNote {
-  background-color: var(--save-button-color);
+  background-color: var(--primary-color);
 }
 
 #saveNote:hover {
-  background-color: var(--save-button-hover);
+  background-color: var(--button-hover-color);
 }
 
 #updateNote {
@@ -238,17 +242,18 @@ button:active {
 /* Settings Buttons */
 #changeBackgroundButton,
 #removeBackgroundButton {
-  background-color: var(--accent-color);
-  color: var(--dark-color);
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
 }
 
 #changeBackgroundButton {
-  margin-bottom: 10px;
+  margin-top: 10px;
+  margin-bottom: 20px;
 }
 
 #changeBackgroundButton:hover,
 #removeBackgroundButton:hover {
-  background-color: var(--primary-color);
+  background-color: var(--button-hover-color);
   color: var(--button-text-color);
 }
 
@@ -314,6 +319,7 @@ button:active {
 
 #coverHeader h1 {
   margin-right: auto;
+  margin-left: auto;
 }
 
 #coverImageContainer {
@@ -439,19 +445,23 @@ button:active {
 }
 
 .theme-option[data-theme="default"] {
-  background-color: #4a6fa5;
-}
-
-.theme-option[data-theme="green"] {
-  background-color: #4caf50;
+  background-color: #0000ff;
 }
 
 .theme-option[data-theme="purple"] {
   background-color: #9c27b0;
 }
 
+.theme-option[data-theme="green"] {
+  background-color: #5bbb1a;
+}
+
 .theme-option[data-theme="red"] {
-  background-color: #f44336;
+  background-color: #c71585;
+}
+
+.theme-option[data-theme="magenta"] {
+  background-color: #c200c2;
 }
 
 .theme-option.selected {
@@ -557,21 +567,28 @@ textarea:focus {
 
 /* Image Upload */
 #imageUpload {
-  display: block;
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
+  padding: 12px;
+  margin: 10px 0;
+  border: 2px solid var(--accent-color);
   border-radius: var(--border-radius);
-  font-size: 16px;
-  margin-bottom: 20px;
-  background-color: #f9f9f9;
   cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.1);
   transition: var(--transition);
 }
 
 #imageUpload:hover {
-  border-color: var(--accent-color);
-  background-color: #f0f0f0;
+  border-color: var(--primary-color);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Style the file input label */
+label[for="imageUpload"] {
+  display: block;
+  margin-top: 20px;
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 1.1em;
 }
 
 #uploadedImage {
@@ -782,4 +799,35 @@ textarea:focus {
   textarea {
     min-height: 150px;
   }
+}
+
+/* File Input Styles */
+.file-input-wrapper {
+  position: relative;
+  margin: 20px 0;
+}
+
+.file-input-wrapper label {
+  display: block;
+  padding: 12px 20px;
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.file-input-wrapper label:hover {
+  background-color: var(--button-hover-color);
+}
+
+.file-input-wrapper input[type="file"] {
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
 }

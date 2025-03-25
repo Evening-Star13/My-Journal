@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Digital Journal</title>
+    <title>My Journal</title>
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <link
@@ -60,6 +60,11 @@
               <div class="theme-option" data-theme="green"></div>
               <div class="theme-option" data-theme="purple"></div>
               <div class="theme-option" data-theme="red"></div>
+              <div
+                class="theme-option"
+                data-theme="magenta"
+                title="Magenta Theme"
+              ></div>
             </div>
           </div>
           <div class="settings-section">
@@ -91,12 +96,17 @@
           placeholder="Write your thoughts here..."
         ></textarea>
 
-        <input type="file" id="imageUpload" accept="image/*" />
+        <div class="file-input-wrapper">
+          <label for="imageUpload">
+            <i class="fas fa-camera"></i> Add an image to your entry
+          </label>
+          <input type="file" id="imageUpload" accept="image/*" />
+        </div>
 
         <img
           id="uploadedImage"
           src=""
-          alt="Uploaded journal image"
+          alt="Uploaded journal"
           style="display: none"
         />
 
@@ -127,7 +137,7 @@
           <img
             id="modalImage"
             src=""
-            alt="Entry image"
+            alt="Entry"
             style="display: none; max-width: 100%; margin: 10px 0"
           />
           <p id="modalContent"></p>

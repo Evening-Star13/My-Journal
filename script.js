@@ -58,7 +58,6 @@ function init() {
   elements.cover.style.display = "block";
   elements.journalApp.style.display = "none";
   elements.journalTitle.textContent = state.journalTitle;
-  elements.journalTitleInside.textContent = state.journalTitle;
 }
 
 // Load entries from localStorage
@@ -72,7 +71,7 @@ function loadDatabase() {
 // Save entries to localStorage
 function saveDatabase() {
   try {
-    console.log("Saving database:", state.database); // Log the database being saved
+    console.log("Saving database:", state.database);
     localStorage.setItem("journalDatabase", JSON.stringify(state.database));
     console.log("Database saved successfully.");
   } catch (error) {
@@ -113,7 +112,8 @@ function applySettings() {
     "theme-default",
     "theme-green",
     "theme-purple",
-    "theme-red"
+    "theme-red",
+    "theme-magenta" // Add the new theme class here
   );
 
   // Apply current theme
@@ -139,8 +139,6 @@ function applySettings() {
 
   // Apply journal title
   elements.journalTitle.textContent = state.journalTitle;
-  elements.journalTitleInside.textContent = state.journalTitle;
-
   // Mark selected theme
   elements.themeOptions.forEach((option) => {
     option.classList.toggle(
@@ -260,26 +258,25 @@ async function saveEntry() {
       fileHandle: null,
     };
 
-    console.log("Saving entry:", entry); // Log the entry being saved
+    console.log("Saving entry:", entry);
 
-    // Try to save PDF file (but don't fail if user cancels)
+    // Try to save text file (but don't fail if user cancels)
     try {
       if (window.showSaveFilePicker) {
         try {
           entry.fileHandle = await window.showSaveFilePicker({
             types: [
               {
-                description: "PDF Files",
-                accept: { "application/pdf": [".pdf"] },
+                description: "Text Files",
+                accept: { "text/plain": [".txt"] },
               },
             ],
             suggestedName: `${title
               .replace(/[^a-z0-9]/gi, "_")
-              .toLowerCase()}.pdf`,
+              .toLowerCase()}.txt`,
           });
-          const pdfContent = await generatePDF(entry);
           const writable = await entry.fileHandle.createWritable();
-          await writable.write(pdfContent);
+          await writable.write(`${title}\n\n${content}`);
           await writable.close();
         } catch (err) {
           console.log("File save canceled or not supported:", err);
@@ -287,8 +284,8 @@ async function saveEntry() {
         }
       }
     } catch (err) {
-      console.log("PDF generation error:", err);
-      // Continue with local storage even if PDF generation fails
+      console.log("File save error:", err);
+      // Continue with local storage even if file save fails
     }
 
     state.database.push(entry);
@@ -327,12 +324,11 @@ async function updateEntry() {
       entry.image = await readFileAsDataURL(imageFile);
     }
 
-    // Update PDF file if it exists
+    // Update text file if it exists
     try {
       if (entry.fileHandle) {
-        const pdfContent = await generatePDF(entry);
         const writable = await entry.fileHandle.createWritable();
-        await writable.write(pdfContent);
+        await writable.write(`${title}\n\n${content}`);
         await writable.close();
       }
     } catch (err) {
@@ -351,13 +347,6 @@ async function updateEntry() {
 }
 
 // File Operations
-async function writePDFToFile(entry) {
-  const writable = await entry.fileHandle.createWritable();
-  const pdfContent = await generatePDF(entry);
-  await writable.write(pdfContent);
-  await writable.close();
-}
-
 async function removeEntryFile(fileHandle) {
   try {
     await fileHandle.remove();
@@ -373,143 +362,6 @@ function readFileAsDataURL(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
-}
-
-// PDF Generation
-async function generatePDF(entry) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 10;
-  const maxLineWidth = pageWidth - margin * 2;
-  const lineHeight = 10;
-  let yOffset = 10;
-
-  // Add title
-  doc.setFontSize(18);
-  doc.text(entry.title, margin, yOffset);
-  yOffset += lineHeight * 1.5;
-
-  // Add date
-  doc.setFontSize(12);
-  doc.text(new Date(entry.timestamp).toLocaleString(), margin, yOffset);
-  yOffset += lineHeight * 1.5;
-
-  // Add content
-  doc.setFontSize(14);
-  const contentLines = doc.splitTextToSize(entry.content, maxLineWidth);
-  for (const line of contentLines) {
-    if (yOffset + lineHeight > pageHeight - margin) {
-      doc.addPage();
-      yOffset = margin;
-    }
-    doc.text(line, margin, yOffset);
-    yOffset += lineHeight;
-  }
-
-  // Add image if exists
-  if (entry.image) {
-    try {
-      const img = new Image();
-      img.src = entry.image;
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        setTimeout(() => reject(new Error("Image loading timed out")), 5000);
-      });
-
-      const imgProps = doc.getImageProperties(img);
-      const imgWidth = 100;
-      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-      const xOffset = (pageWidth - imgWidth) / 2;
-
-      if (yOffset + imgHeight > pageHeight - margin) {
-        doc.addPage();
-        yOffset = margin;
-      }
-
-      doc.addImage(img, "JPEG", xOffset, yOffset, imgWidth, imgHeight);
-    } catch (err) {
-      console.error("Error adding image to PDF:", err);
-      // Continue without the image if there's an error
-    }
-  }
-
-  return doc.output("arraybuffer");
-}
-
-async function generateDatabasePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  let isFirstPage = true;
-
-  for (const entry of state.database) {
-    if (!isFirstPage) {
-      doc.addPage();
-    } else {
-      isFirstPage = false;
-    }
-
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 10;
-    const maxLineWidth = pageWidth - margin * 2;
-    const lineHeight = 10;
-    let yOffset = 10;
-
-    // Add title
-    doc.setFontSize(18);
-    doc.text(entry.title, margin, yOffset);
-    yOffset += lineHeight * 1.5;
-
-    // Add date
-    doc.setFontSize(12);
-    doc.text(new Date(entry.timestamp).toLocaleString(), margin, yOffset);
-    yOffset += lineHeight * 1.5;
-
-    // Add content
-    doc.setFontSize(14);
-    const contentLines = doc.splitTextToSize(entry.content, maxLineWidth);
-    for (const line of contentLines) {
-      if (yOffset + lineHeight > pageHeight - margin) {
-        doc.addPage();
-        yOffset = margin;
-      }
-      doc.text(line, margin, yOffset);
-      yOffset += lineHeight;
-    }
-
-    // Add image if exists
-    if (entry.image) {
-      try {
-        const img = new Image();
-        img.src = entry.image;
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          setTimeout(() => reject(new Error("Image loading timed out")), 5000);
-        });
-
-        const imgProps = doc.getImageProperties(img);
-        const imgWidth = 100;
-        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-        const xOffset = (pageWidth - imgWidth) / 2;
-
-        if (yOffset + imgHeight > pageHeight - margin) {
-          doc.addPage();
-          yOffset = margin;
-        }
-
-        doc.addImage(img, "JPEG", xOffset, yOffset, imgWidth, imgHeight);
-      } catch (err) {
-        console.error("Error adding image to PDF:", err);
-        // Continue without the image if there's an error
-      }
-    }
-  }
-
-  return doc.output("arraybuffer");
 }
 
 // Entries List Rendering
@@ -614,17 +466,16 @@ async function saveModalChanges() {
     );
 
     if (entryIndex !== -1) {
-      state.database[entryIndex].content = updatedContent;
-      state.database[entryIndex].timestamp = new Date().toISOString();
+      const entry = state.database[entryIndex];
+      entry.content = updatedContent;
+      entry.timestamp = new Date().toISOString();
       saveDatabase();
 
-      // Update PDF file if it exists
+      // Update text file if it exists
       try {
-        const entry = state.database[entryIndex];
         if (entry.fileHandle) {
-          const pdfContent = await generatePDF(entry);
           const writable = await entry.fileHandle.createWritable();
-          await writable.write(pdfContent);
+          await writable.write(`${entry.title}\n\n${updatedContent}`);
           await writable.close();
         }
       } catch (err) {
@@ -675,27 +526,42 @@ async function downloadDatabase() {
     if (window.showSaveFilePicker) {
       const fileHandle = await window.showSaveFilePicker({
         types: [
-          { description: "PDF Files", accept: { "application/pdf": [".pdf"] } },
+          { description: "Text Files", accept: { "text/plain": [".txt"] } },
         ],
-        suggestedName: "my_journal_export.pdf",
+        suggestedName: "my_journal_export.txt",
       });
 
-      const pdfContent = await generateDatabasePDF();
       const writable = await fileHandle.createWritable();
-      await writable.write(pdfContent);
+      let fileContent = "";
+
+      for (const entry of state.database) {
+        fileContent += `=== ${entry.title} ===\n`;
+        fileContent += `Date: ${new Date(
+          entry.timestamp
+        ).toLocaleString()}\n\n`;
+        fileContent += `${entry.content}\n\n\n`;
+      }
+
+      await writable.write(fileContent);
       await writable.close();
       alert("Journal exported successfully!");
       return;
     }
 
     // Fallback for browsers without File System Access API
-    const { jsPDF } = window.jspdf;
-    const pdfDoc = await generateDatabasePDF();
-    const blob = new Blob([pdfDoc], { type: "application/pdf" });
+    let fileContent = "";
+
+    for (const entry of state.database) {
+      fileContent += `=== ${entry.title} ===\n`;
+      fileContent += `Date: ${new Date(entry.timestamp).toLocaleString()}\n\n`;
+      fileContent += `${entry.content}\n\n\n`;
+    }
+
+    const blob = new Blob([fileContent], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "my_journal_export.pdf";
+    a.download = "my_journal_export.txt";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -776,7 +642,6 @@ function editJournalTitle() {
   if (newTitle && newTitle.trim() !== "") {
     state.journalTitle = newTitle.trim();
     elements.journalTitle.textContent = state.journalTitle;
-    elements.journalTitleInside.textContent = state.journalTitle;
     saveSettings();
   }
 }
