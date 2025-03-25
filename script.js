@@ -42,7 +42,7 @@ const state = {
   editingEntryId: null,
   currentModalEntryId: null,
   fileHandle: null,
-  currentTheme: "default",
+  currentTheme: "theme-default",
   darkMode: false,
   backgroundImage: null,
   journalTitle: "My Digital Journal",
@@ -71,7 +71,14 @@ function loadDatabase() {
 
 // Save entries to localStorage
 function saveDatabase() {
-  localStorage.setItem("journalDatabase", JSON.stringify(state.database));
+  try {
+    console.log("Saving database:", state.database); // Log the database being saved
+    localStorage.setItem("journalDatabase", JSON.stringify(state.database));
+    console.log("Database saved successfully.");
+  } catch (error) {
+    console.error("Error saving database:", error);
+    alert("An error occurred while saving the database. Details in console.");
+  }
 }
 
 // Load settings from localStorage
@@ -79,7 +86,7 @@ function loadSettings() {
   const savedSettings = localStorage.getItem("journalSettings");
   if (savedSettings) {
     const settings = JSON.parse(savedSettings);
-    state.currentTheme = settings.currentTheme || "default";
+    state.currentTheme = settings.currentTheme || "theme-default";
     state.darkMode = settings.darkMode || false;
     state.backgroundImage = settings.backgroundImage || null;
     state.journalTitle = settings.journalTitle || "My Digital Journal";
@@ -101,8 +108,16 @@ function saveSettings() {
 
 // Apply current settings to the UI
 function applySettings() {
-  // Apply theme
-  document.body.className = state.currentTheme;
+  // Remove all theme classes first
+  document.body.classList.remove(
+    "theme-default",
+    "theme-green",
+    "theme-purple",
+    "theme-red"
+  );
+
+  // Apply current theme
+  document.body.classList.add(state.currentTheme);
 
   // Apply dark mode
   if (state.darkMode) {
@@ -130,7 +145,7 @@ function applySettings() {
   elements.themeOptions.forEach((option) => {
     option.classList.toggle(
       "selected",
-      option.dataset.theme === state.currentTheme
+      option.dataset.theme === state.currentTheme.replace("theme-", "")
     );
   });
 }
@@ -159,7 +174,9 @@ function setupEventListeners() {
   // Settings
   elements.settingsButton.addEventListener("click", toggleSettingsDropdown);
   elements.themeOptions.forEach((option) => {
-    option.addEventListener("click", () => changeTheme(option.dataset.theme));
+    option.addEventListener("click", () =>
+      changeTheme(`theme-${option.dataset.theme}`)
+    );
   });
   elements.darkModeToggle.addEventListener("change", toggleDarkMode);
   elements.changeBackgroundButton.addEventListener("click", changeBackground);
@@ -243,28 +260,45 @@ async function saveEntry() {
       fileHandle: null,
     };
 
-    // Save PDF file
+    console.log("Saving entry:", entry); // Log the entry being saved
+
+    // Try to save PDF file (but don't fail if user cancels)
     try {
-      entry.fileHandle = await window.showSaveFilePicker({
-        types: [
-          { description: "PDF Files", accept: { "application/pdf": [".pdf"] } },
-        ],
-        suggestedName: `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.pdf`,
-      });
-      await writePDFToFile(entry);
-      alert("Entry saved successfully!");
+      if (window.showSaveFilePicker) {
+        try {
+          entry.fileHandle = await window.showSaveFilePicker({
+            types: [
+              {
+                description: "PDF Files",
+                accept: { "application/pdf": [".pdf"] },
+              },
+            ],
+            suggestedName: `${title
+              .replace(/[^a-z0-9]/gi, "_")
+              .toLowerCase()}.pdf`,
+          });
+          const pdfContent = await generatePDF(entry);
+          const writable = await entry.fileHandle.createWritable();
+          await writable.write(pdfContent);
+          await writable.close();
+        } catch (err) {
+          console.log("File save canceled or not supported:", err);
+          // Continue with local storage even if file save fails
+        }
+      }
     } catch (err) {
-      console.error("File save error:", err);
-      alert("Entry saved locally, but file save was canceled or failed.");
+      console.log("PDF generation error:", err);
+      // Continue with local storage even if PDF generation fails
     }
 
     state.database.push(entry);
     saveDatabase();
     resetEntryForm();
     renderEntries();
+    alert("Entry saved successfully!");
   } catch (error) {
     console.error("Save error:", error);
-    alert("An error occurred while saving the entry.");
+    alert("An error occurred while saving the entry. Details in console.");
   }
 }
 
@@ -293,34 +327,26 @@ async function updateEntry() {
       entry.image = await readFileAsDataURL(imageFile);
     }
 
-    // Update PDF file
+    // Update PDF file if it exists
     try {
-      if (!entry.fileHandle) {
-        entry.fileHandle = await window.showSaveFilePicker({
-          types: [
-            {
-              description: "PDF Files",
-              accept: { "application/pdf": [".pdf"] },
-            },
-          ],
-          suggestedName: `${title
-            .replace(/[^a-z0-9]/gi, "_")
-            .toLowerCase()}.pdf`,
-        });
+      if (entry.fileHandle) {
+        const pdfContent = await generatePDF(entry);
+        const writable = await entry.fileHandle.createWritable();
+        await writable.write(pdfContent);
+        await writable.close();
       }
-      await writePDFToFile(entry);
-      alert("Entry updated successfully!");
     } catch (err) {
-      console.error("File save error:", err);
-      alert("Entry updated locally, but file save was canceled or failed.");
+      console.log("File update failed:", err);
+      // Continue with local storage update even if file update fails
     }
 
     saveDatabase();
     resetEntryForm();
     renderEntries();
+    alert("Entry updated successfully!");
   } catch (error) {
     console.error("Update error:", error);
-    alert("An error occurred while updating the entry.");
+    alert("An error occurred while updating the entry. Details in console.");
   }
 }
 
@@ -384,24 +410,30 @@ async function generatePDF(entry) {
 
   // Add image if exists
   if (entry.image) {
-    const img = new Image();
-    img.src = entry.image;
-    await new Promise((resolve) => {
-      img.onload = () => {
-        const imgProps = doc.getImageProperties(img);
-        const imgWidth = 100;
-        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-        const xOffset = (pageWidth - imgWidth) / 2;
+    try {
+      const img = new Image();
+      img.src = entry.image;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        setTimeout(() => reject(new Error("Image loading timed out")), 5000);
+      });
 
-        if (yOffset + imgHeight > pageHeight - margin) {
-          doc.addPage();
-          yOffset = margin;
-        }
+      const imgProps = doc.getImageProperties(img);
+      const imgWidth = 100;
+      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+      const xOffset = (pageWidth - imgWidth) / 2;
 
-        doc.addImage(img, "JPEG", xOffset, yOffset, imgWidth, imgHeight);
-        resolve();
-      };
-    });
+      if (yOffset + imgHeight > pageHeight - margin) {
+        doc.addPage();
+        yOffset = margin;
+      }
+
+      doc.addImage(img, "JPEG", xOffset, yOffset, imgWidth, imgHeight);
+    } catch (err) {
+      console.error("Error adding image to PDF:", err);
+      // Continue without the image if there's an error
+    }
   }
 
   return doc.output("arraybuffer");
@@ -450,24 +482,30 @@ async function generateDatabasePDF() {
 
     // Add image if exists
     if (entry.image) {
-      const img = new Image();
-      img.src = entry.image;
-      await new Promise((resolve) => {
-        img.onload = () => {
-          const imgProps = doc.getImageProperties(img);
-          const imgWidth = 100;
-          const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-          const xOffset = (pageWidth - imgWidth) / 2;
+      try {
+        const img = new Image();
+        img.src = entry.image;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          setTimeout(() => reject(new Error("Image loading timed out")), 5000);
+        });
 
-          if (yOffset + imgHeight > pageHeight - margin) {
-            doc.addPage();
-            yOffset = margin;
-          }
+        const imgProps = doc.getImageProperties(img);
+        const imgWidth = 100;
+        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+        const xOffset = (pageWidth - imgWidth) / 2;
 
-          doc.addImage(img, "JPEG", xOffset, yOffset, imgWidth, imgHeight);
-          resolve();
-        };
-      });
+        if (yOffset + imgHeight > pageHeight - margin) {
+          doc.addPage();
+          yOffset = margin;
+        }
+
+        doc.addImage(img, "JPEG", xOffset, yOffset, imgWidth, imgHeight);
+      } catch (err) {
+        console.error("Error adding image to PDF:", err);
+        // Continue without the image if there's an error
+      }
     }
   }
 
@@ -580,20 +618,22 @@ async function saveModalChanges() {
       state.database[entryIndex].timestamp = new Date().toISOString();
       saveDatabase();
 
-      // Update PDF file
+      // Update PDF file if it exists
       try {
         const entry = state.database[entryIndex];
         if (entry.fileHandle) {
-          await writePDFToFile(entry);
-          alert("Entry updated successfully!");
+          const pdfContent = await generatePDF(entry);
+          const writable = await entry.fileHandle.createWritable();
+          await writable.write(pdfContent);
+          await writable.close();
         }
       } catch (err) {
         console.error("File save error:", err);
-        alert("Entry updated locally, but file save failed.");
       }
 
       renderEntries();
       closeModal();
+      alert("Entry updated successfully!");
     }
   } catch (error) {
     console.error("Error saving changes:", error);
@@ -631,22 +671,41 @@ async function downloadDatabase() {
   }
 
   try {
-    state.fileHandle = await window.showSaveFilePicker({
-      types: [
-        { description: "PDF Files", accept: { "application/pdf": [".pdf"] } },
-      ],
-      suggestedName: "my_journal_export.pdf",
-    });
+    // Try File System Access API first
+    if (window.showSaveFilePicker) {
+      const fileHandle = await window.showSaveFilePicker({
+        types: [
+          { description: "PDF Files", accept: { "application/pdf": [".pdf"] } },
+        ],
+        suggestedName: "my_journal_export.pdf",
+      });
 
-    const writable = await state.fileHandle.createWritable();
-    const pdfContent = await generateDatabasePDF();
-    await writable.write(pdfContent);
-    await writable.close();
+      const pdfContent = await generateDatabasePDF();
+      const writable = await fileHandle.createWritable();
+      await writable.write(pdfContent);
+      await writable.close();
+      alert("Journal exported successfully!");
+      return;
+    }
 
+    // Fallback for browsers without File System Access API
+    const { jsPDF } = window.jspdf;
+    const pdfDoc = await generateDatabasePDF();
+    const blob = new Blob([pdfDoc], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "my_journal_export.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
     alert("Journal exported successfully!");
   } catch (err) {
     console.error("Export error:", err);
-    alert("Export was canceled or failed.");
+    if (err.name !== "AbortError") {
+      alert("Export was canceled or failed.");
+    }
   }
 }
 
@@ -674,20 +733,13 @@ function toggleSettingsDropdown() {
 
 function changeTheme(theme) {
   state.currentTheme = theme;
-  document.body.className = theme;
-  elements.themeOptions.forEach((option) => {
-    option.classList.toggle("selected", option.dataset.theme === theme);
-  });
+  applySettings();
   saveSettings();
 }
 
 function toggleDarkMode() {
   state.darkMode = elements.darkModeToggle.checked;
-  if (state.darkMode) {
-    document.body.classList.add("dark-mode");
-  } else {
-    document.body.classList.remove("dark-mode");
-  }
+  applySettings();
   saveSettings();
 }
 
