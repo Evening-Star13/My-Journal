@@ -22,6 +22,18 @@ const elements = {
   openJournalButton: document.getElementById("openJournalButton"),
   closeJournalButton: document.getElementById("closeJournalButton"),
   uploadedImage: document.getElementById("uploadedImage"),
+  settingsButton: document.getElementById("settingsButton"),
+  settingsDropdown: document.getElementById("settingsDropdown"),
+  themeOptions: document.querySelectorAll(".theme-option"),
+  darkModeToggle: document.getElementById("darkModeToggle"),
+  changeBackgroundButton: document.getElementById("changeBackgroundButton"),
+  removeBackgroundButton: document.getElementById("removeBackgroundButton"),
+  journalTitle: document.getElementById("journalTitle"),
+  journalTitleInside: document.getElementById("journalTitleInside"),
+  editTitleButton: document.getElementById("editTitleButton"),
+  coverImage: document.getElementById("coverImage"),
+  changeCoverImage: document.getElementById("changeCoverImage"),
+  coverImageUpload: document.getElementById("coverImageUpload"),
 };
 
 // App State
@@ -30,12 +42,23 @@ const state = {
   editingEntryId: null,
   currentModalEntryId: null,
   fileHandle: null,
+  currentTheme: "default",
+  darkMode: false,
+  backgroundImage: null,
+  journalTitle: "My Digital Journal",
 };
 
 // Initialize the app
 function init() {
   loadDatabase();
+  loadSettings();
   setupEventListeners();
+
+  // Initialize UI state
+  elements.cover.style.display = "block";
+  elements.journalApp.style.display = "none";
+  elements.journalTitle.textContent = state.journalTitle;
+  elements.journalTitleInside.textContent = state.journalTitle;
 }
 
 // Load entries from localStorage
@@ -43,13 +66,73 @@ function loadDatabase() {
   const savedData = localStorage.getItem("journalDatabase");
   if (savedData) {
     state.database = JSON.parse(savedData);
-    renderEntries();
   }
 }
 
 // Save entries to localStorage
 function saveDatabase() {
   localStorage.setItem("journalDatabase", JSON.stringify(state.database));
+}
+
+// Load settings from localStorage
+function loadSettings() {
+  const savedSettings = localStorage.getItem("journalSettings");
+  if (savedSettings) {
+    const settings = JSON.parse(savedSettings);
+    state.currentTheme = settings.currentTheme || "default";
+    state.darkMode = settings.darkMode || false;
+    state.backgroundImage = settings.backgroundImage || null;
+    state.journalTitle = settings.journalTitle || "My Digital Journal";
+
+    applySettings();
+  }
+}
+
+// Save settings to localStorage
+function saveSettings() {
+  const settings = {
+    currentTheme: state.currentTheme,
+    darkMode: state.darkMode,
+    backgroundImage: state.backgroundImage,
+    journalTitle: state.journalTitle,
+  };
+  localStorage.setItem("journalSettings", JSON.stringify(settings));
+}
+
+// Apply current settings to the UI
+function applySettings() {
+  // Apply theme
+  document.body.className = state.currentTheme;
+
+  // Apply dark mode
+  if (state.darkMode) {
+    document.body.classList.add("dark-mode");
+    elements.darkModeToggle.checked = true;
+  } else {
+    document.body.classList.remove("dark-mode");
+    elements.darkModeToggle.checked = false;
+  }
+
+  // Apply background image
+  if (state.backgroundImage) {
+    document.body.style.backgroundImage = `url(${state.backgroundImage})`;
+    document.body.classList.add("custom-background");
+  } else {
+    document.body.style.backgroundImage = "";
+    document.body.classList.remove("custom-background");
+  }
+
+  // Apply journal title
+  elements.journalTitle.textContent = state.journalTitle;
+  elements.journalTitleInside.textContent = state.journalTitle;
+
+  // Mark selected theme
+  elements.themeOptions.forEach((option) => {
+    option.classList.toggle(
+      "selected",
+      option.dataset.theme === state.currentTheme
+    );
+  });
 }
 
 // Setup all event listeners
@@ -73,10 +156,32 @@ function setupEventListeners() {
   elements.modalSaveButton.addEventListener("click", saveModalChanges);
   elements.modalDeleteButton.addEventListener("click", deleteModalEntry);
 
+  // Settings
+  elements.settingsButton.addEventListener("click", toggleSettingsDropdown);
+  elements.themeOptions.forEach((option) => {
+    option.addEventListener("click", () => changeTheme(option.dataset.theme));
+  });
+  elements.darkModeToggle.addEventListener("change", toggleDarkMode);
+  elements.changeBackgroundButton.addEventListener("click", changeBackground);
+  elements.removeBackgroundButton.addEventListener("click", removeBackground);
+
+  // Cover customization
+  elements.editTitleButton.addEventListener("click", editJournalTitle);
+  elements.changeCoverImage.addEventListener("click", () =>
+    elements.coverImageUpload.click()
+  );
+  elements.coverImageUpload.addEventListener("change", changeCoverImageHandler);
+
   // Close modal when clicking outside
   window.addEventListener("click", (event) => {
     if (event.target === elements.modal) {
       closeModal();
+    }
+    if (
+      !event.target.closest(".settings-dropdown") &&
+      !event.target.closest(".settings-button")
+    ) {
+      elements.settingsDropdown.style.display = "none";
     }
   });
 }
@@ -85,12 +190,14 @@ function setupEventListeners() {
 function showJournal() {
   elements.cover.style.display = "none";
   elements.journalApp.style.display = "block";
+  renderEntries();
 }
 
 function showCover() {
   elements.journalApp.style.display = "none";
   elements.cover.style.display = "block";
   resetEntryForm();
+  elements.settingsDropdown.style.display = "none";
 }
 
 function toggleEntriesList() {
@@ -551,6 +658,85 @@ function handleImageUpload(event) {
     reader.onload = (e) => {
       elements.uploadedImage.src = e.target.result;
       elements.uploadedImage.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+// Settings functions
+function toggleSettingsDropdown() {
+  if (elements.settingsDropdown.style.display === "block") {
+    elements.settingsDropdown.style.display = "none";
+  } else {
+    elements.settingsDropdown.style.display = "block";
+  }
+}
+
+function changeTheme(theme) {
+  state.currentTheme = theme;
+  document.body.className = theme;
+  elements.themeOptions.forEach((option) => {
+    option.classList.toggle("selected", option.dataset.theme === theme);
+  });
+  saveSettings();
+}
+
+function toggleDarkMode() {
+  state.darkMode = elements.darkModeToggle.checked;
+  if (state.darkMode) {
+    document.body.classList.add("dark-mode");
+  } else {
+    document.body.classList.remove("dark-mode");
+  }
+  saveSettings();
+}
+
+function changeBackground() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        state.backgroundImage = event.target.result;
+        document.body.style.backgroundImage = `url(${state.backgroundImage})`;
+        document.body.classList.add("custom-background");
+        saveSettings();
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  input.click();
+}
+
+function removeBackground() {
+  state.backgroundImage = null;
+  document.body.style.backgroundImage = "";
+  document.body.classList.remove("custom-background");
+  saveSettings();
+}
+
+// Cover customization functions
+function editJournalTitle() {
+  const newTitle = prompt("Enter new journal title:", state.journalTitle);
+  if (newTitle && newTitle.trim() !== "") {
+    state.journalTitle = newTitle.trim();
+    elements.journalTitle.textContent = state.journalTitle;
+    elements.journalTitleInside.textContent = state.journalTitle;
+    saveSettings();
+  }
+}
+
+function changeCoverImageHandler(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      elements.coverImage.src = e.target.result;
+      // Save to localStorage if you want to persist the cover image
+      localStorage.setItem("journalCoverImage", e.target.result);
     };
     reader.readAsDataURL(file);
   }
