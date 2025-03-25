@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Digital Journal</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- Cover Section -->
+    <div id="cover">
+      <h1>My Digital Journal</h1>
+      <div id="coverImage">
+        <img src="./logo9.png" alt="Journal Logo" />
+      </div>
+      <button id="openJournalButton">
+        <i class="fas fa-book-open"></i> Open Journal
+      </button>
+    </div>
+
+    <!-- Journal App Section -->
+    <div id="journalApp" style="display: none">
+      <div class="container">
+        <h1><i class="fas fa-book"></i> My Journal</h1>
+
+        <input
+          type="text"
+          id="entryTitle"
+          placeholder="What's on your mind today?"
+        />
+
+        <textarea
+          id="journalEntry"
+          placeholder="Write your thoughts here..."
+        ></textarea>
+
+        <input type="file" id="imageUpload" accept="image/*" />
+
+        <img
+          id="uploadedImage"
+          src=""
+          alt="Uploaded journal image"
+          style="display: none"
+        />
+
+        <div class="buttons">
+          <button id="saveNote"><i class="fas fa-save"></i> Save Entry</button>
+          <button id="updateNote" style="display: none">
+            <i class="fas fa-sync-alt"></i> Update Entry
+          </button>
+          <button id="tableOfContents">
+            <i class="fas fa-list"></i> My Entries
+          </button>
+          <button id="downloadDatabase">
+            <i class="fas fa-download"></i> Export
+          </button>
+          <button id="closeJournalButton">
+            <i class="fas fa-times"></i> Close
+          </button>
+        </div>
+
+        <div id="entriesList" style="display: none"></div>
+      </div>
+
+      <!-- Entry Modal -->
+      <div id="entryModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2 id="modalTitle">Entry Title</h2>
+          <img
+            id="modalImage"
+            src=""
+            alt="Entry image"
+            style="display: none; max-width: 100%; margin: 10px 0"
+          />
+          <p id="modalContent"></p>
+          <textarea id="modalEditContent" style="display: none"></textarea>
+          <div class="modal-actions">
+            <button id="modalEditButton" class="modalButtons">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button
+              id="modalSaveButton"
+              class="modalButtons"
+              style="display: none"
+            >
+              <i class="fas fa-check"></i> Save
+            </button>
+            <button id="modalDeleteButton" class="modalButtons">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
