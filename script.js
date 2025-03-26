@@ -113,7 +113,7 @@ function applySettings() {
     "theme-green",
     "theme-purple",
     "theme-red",
-    "theme-magenta" // Add the new theme class here
+    "theme-magenta"
   );
 
   // Apply current theme
@@ -123,9 +123,15 @@ function applySettings() {
   if (state.darkMode) {
     document.body.classList.add("dark-mode");
     elements.darkModeToggle.checked = true;
+
+    // Update input and textarea styles for dark mode
+    updateInputStyles();
   } else {
     document.body.classList.remove("dark-mode");
     elements.darkModeToggle.checked = false;
+
+    // Update input and textarea styles for light mode
+    updateInputStyles();
   }
 
   // Apply background image
@@ -139,12 +145,30 @@ function applySettings() {
 
   // Apply journal title
   elements.journalTitle.textContent = state.journalTitle;
+  elements.journalTitleInside.textContent = state.journalTitle;
+
   // Mark selected theme
   elements.themeOptions.forEach((option) => {
     option.classList.toggle(
       "selected",
       option.dataset.theme === state.currentTheme.replace("theme-", "")
     );
+  });
+}
+
+// Helper function to update input and textarea styles based on theme
+function updateInputStyles() {
+  const inputs = [
+    elements.entryTitle,
+    elements.journalEntry,
+    elements.modalEditContent,
+  ];
+
+  inputs.forEach((input) => {
+    if (input) {
+      input.style.borderColor = "";
+      input.style.boxShadow = "";
+    }
   });
 }
 
@@ -172,9 +196,11 @@ function setupEventListeners() {
   // Settings
   elements.settingsButton.addEventListener("click", toggleSettingsDropdown);
   elements.themeOptions.forEach((option) => {
-    option.addEventListener("click", () =>
-      changeTheme(`theme-${option.dataset.theme}`)
-    );
+    option.addEventListener("click", () => {
+      changeTheme(`theme-${option.dataset.theme}`);
+      // Force update input styles when theme changes
+      updateInputStyles();
+    });
   });
   elements.darkModeToggle.addEventListener("change", toggleDarkMode);
   elements.changeBackgroundButton.addEventListener("click", changeBackground);
@@ -642,6 +668,7 @@ function editJournalTitle() {
   if (newTitle && newTitle.trim() !== "") {
     state.journalTitle = newTitle.trim();
     elements.journalTitle.textContent = state.journalTitle;
+    elements.journalTitleInside.textContent = state.journalTitle;
     saveSettings();
   }
 }
